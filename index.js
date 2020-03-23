@@ -132,11 +132,14 @@ module.exports = {
     }
     const ecKey = ec.keyFromPrivate(key.payload)
 
-    const sigData = module.exports.signFromECKey(digest, ecKey)
+    const data = hash.sha256().update(digest).digest()
+    const sigData = module.exports.signFromECKey(data, ecKey)
     return module.exports.keyToString('SIG', type, sigData)
   }
-  , recover: (hash, sig) => {
-    const h = new BN(hash, 16, 'be')
+
+  , recover: (digest, sig) => {
+    const data = hash.sha256().update(digest).digest()
+    const h = new BN(data, 16, 'be')
     const {prefix, type, payload } = module.exports.stringToKey(sig)
     if (prefix != "SIG") {
       return null;

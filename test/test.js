@@ -16,18 +16,15 @@ let data = Buffer.from(
 
 data = Buffer.from("Hello World!");
 
-const digest = hash.sha256().update(data).digest()
-//console.log(digest)
-
 // keyTools.ecsm2 or keyTools.eck1 (default)
 const key = keyTools.newKeyPair(keyTools.ecsm2)
 console.log(key)
 console.log('privateKeyToPublicKey: ' + keyTools.privateKeyToPublicKey(key.priKey))
 
 //digest need sha256
-const sigStr = keyTools.sign(digest, key.priKey);
+const sigStr = keyTools.sign(data, key.priKey);
 console.log(sigStr)
 
-const recoverKey = keyTools.recover(digest, sigStr)
+const recoverKey = keyTools.recover(data, sigStr)
 console.log(recoverKey)
 assert(recoverKey == key.pubKey)
