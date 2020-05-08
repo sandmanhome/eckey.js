@@ -2,9 +2,7 @@
 
 'use strict'
 const assert = require("assert");
-
 const keyTools = require('../')
-const hash = require('hash.js')
 
 let data = Buffer.from(
   // chainId
@@ -16,15 +14,16 @@ let data = Buffer.from(
 
 data = Buffer.from("Hello World!");
 
-// keyTools.ecsm2 or keyTools.eck1 (default)
-const key = keyTools.newKeyPair(keyTools.ecsm2)
+// keyTools.eck1 or keyTools.ecr1 or keyTools.ecsm2 (default)
+const key = keyTools.newKeyPair()
 console.log(key)
-console.log('privateKeyToPublicKey: ' + keyTools.privateKeyToPublicKey(key.priKey))
+assert(keyTools.privateKeyToPublicKey(key.priKey) == key.pubKey)
 
-//digest need sha256
+//sign will sha256 of data
 const sigStr = keyTools.sign(data, key.priKey);
 console.log(sigStr)
 
+//recover will sha256 of data
 const recoverKey = keyTools.recover(data, sigStr)
-console.log(recoverKey)
+console.log('recoverKey: ' + recoverKey)
 assert(recoverKey == key.pubKey)

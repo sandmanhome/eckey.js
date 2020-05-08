@@ -1,12 +1,4 @@
 {
-  "dependencies": {
-    "bs58": "^4.0.1",
-    "bs58check": "^2.1.2",
-    "debug": "^4.1.1",
-    "elliptic": "^6.5.2",
-    "miniprogram-sm-crypto": "^0.1.0",
-    "ripemd160": "^2.0.2"
-  },
   "name": "eckey.js",
   "description": "secp256k1、sm2p256v1 keytools by js",
   "version": "1.0.0",
@@ -14,9 +6,15 @@
   "directories": {
     "test": "test"
   },
+  "dependencies": {
+    "bs58": "^4.0.1",
+    "bs58check": "^2.1.2",
+    "elliptic": "^6.5.2",
+    "ripemd160": "^2.0.2"
+  },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node test/*"
   },
   "repository": {
     "type": "git",
@@ -24,6 +22,7 @@
   },
   "keywords": [
     "secp256k1",
+    "secp256r1",
     "sm2p256v1"
   ],
   "author": "sandmanhome",

@@ -1,26 +1,47 @@
 ## eckey.js
-secp256k1、sm2p256v1 keytools by js
+
+secp256k1 secp256r1 sm2p256v1 keytools by js
+use sha256 for sign
 
 ## Usage
 
+``` js
+const keyTools- = require('eckey.js');
+```
+
 ### newKeyPair
+
 ```js
-const keyTools- = require('icbs-key-tools.js');
-const key = keyTools.newKeyPair(keyTools.SM2) // keyTools.SM2
+'use strict'
+const assert = require("assert");
+const keyTools- = require('eckey.js');
+
+const key = keyTools.newKeyPair()
 console.log(key)
-console.log('privateKeyToPublicKey: ' + keyTools.privateKeyToPublicKey(key.priKey))
+assert(keyTools.privateKeyToPublicKey(key.priKey) == key.pubKey)
 ```
 
 ### sign
+
 ```js
+'use strict'
+const assert = require("assert");
+const keyTools- = require('eckey.js');
+
 let data = Buffer.from("Hello World!");
 
-const key = keyTools.newKeyPair(keyTools.ecsm2)
+// keyTools.eck1 or keyTools.ecr1 or keyTools.ecsm2 (default)
+const key = keyTools.newKeyPair()
+console.log(key)
+assert(keyTools.privateKeyToPublicKey(key.priKey) == key.pubKey)
+
+//sign will sha256 of data
 const sigStr = keyTools.sign(data, key.priKey);
 console.log(sigStr)
 
+//recover will sha256 of data
 const recoverKey = keyTools.recover(data, sigStr)
-console.log(recoverKey)
+console.log('recoverKey: ' + recoverKey)
 assert(recoverKey == key.pubKey)
 ```
 

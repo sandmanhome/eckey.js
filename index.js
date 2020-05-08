@@ -8,7 +8,6 @@ const BN = require('bn.js')
 const elliptic = require('elliptic')
 const EC = elliptic.ec
 const hash = require('hash.js')
-const debug = require('debug')
 
 module.exports = {
   eck1: new EC('secp256k1')
@@ -54,28 +53,29 @@ module.exports = {
   }
 
   , getPointFromEcc: (n, ec) => {
-    if (ec == module.exports.ecsm2) {
-      ec = module.exports.ecsm2
-    } else {
+    if (ec == module.exports.ecr1) {
+      ec = module.exports.ecr1
+    } else if (ec == module.exports.eck1) {
       ec = module.exports.eck1
+    } else {
+      ec = module.exports.ecsm2
     }
 
     const pvt = new BN(n, 'be')
-    debug('pvt =', pvt.toString('hex'))
     const pub = ec.g.mul(pvt)
-    debug('x =', pub.getX().toString('hex'))
-    debug('y =', pub.getY().toString('hex'))
     const y = pub.getY().isEven() ? 2 : 3
-    return Buffer.from([y].concat(pub.getX().toArray()))
+    return Buffer.from([y].concat(pub.getX().toArray('be', 32)))
   }
 
   , privateKeyToPublicKey: (privateKey) => {
     const { type, payload } = module.exports.stringToKey(privateKey)
     let ec
-    if (type == 'SM2') {
-      ec = module.exports.ecsm2
-    } else {
+    if (type == 'K1') {
       ec = module.exports.eck1
+    } else if (type == 'R1') {
+      ec = module.exports.ecr1
+    } else {
+      ec = module.exports.ecsm2
     }
 
     return module.exports.keyToString('PUB', type, module.exports.getPointFromEcc(payload, ec))
@@ -83,24 +83,31 @@ module.exports = {
 
   , newKeyPair: (ec) => {
     let type
-    if (ec == module.exports.ecsm2) {
-      ec = module.exports.ecsm2
-      type = 'SM2'
-    } else {
+    if (ec == module.exports.ecr1) {
+      ec = module.exports.ecr1
+      type = 'R1'
+    } else if (ec == module.exports.eck1) {
       ec = module.exports.eck1
       type = 'K1'
+    } else {
+      ec = module.exports.ecsm2
+      type = 'SM2'
     }
 
     const key = ec.genKeyPair()
+    // private key 32byte
+    const priData = key.getPrivate().toArray('be', 32)
+    const priKey = module.exports.keyToString('PVT', type, priData)
 
-    const pri = key.getPrivate()
-    const prikey = module.exports.keyToString('PVT', type, pri.toBuffer())
+    const publicKey = key.getPublic()
+    const x = publicKey.getX().toArray('be', 32);
+    const Y = publicKey.getY().isEven() ? 2 : 3
+    // const y = publicKey.getY().toArray('be', 32);
+    // const Y = y[31] & 1) ? 3 : 2
 
-    const pub = key.getPublic()
-    const y = pub.getY().isEven() ? 2 : 3
-    const pubkey = module.exports.keyToString('PUB', type
-      , Buffer.from([y].concat(pub.getX().toArray())))
-    return { priKey: prikey, pubKey: pubkey }
+    const pubKey = module.exports.keyToString('PUB', type
+      , Buffer.from([Y].concat(x)))
+    return { priKey, pubKey }
   }
 
   , isCanonical: (n) => {
@@ -112,8 +119,8 @@ module.exports = {
     let tries = 0
     for (; ;) {
       const sig = ecKey.sign(digest, { canonical: true, pers: [++tries] })
-      const r = sig.r.toArray()
-      const s = sig.s.toArray()
+      const r = sig.r.toArray('be', 32);
+      const s = sig.s.toArray('be', 32);
       if (!module.exports.isCanonical(r) || !module.exports.isCanonical(s)) {
         continue
       }
@@ -125,10 +132,12 @@ module.exports = {
     const key = module.exports.stringToKey(priKey)
     const type = key.type
     let ec
-    if (type == 'SM2') {
-      ec = module.exports.ecsm2
-    } else {
+    if (type == 'K1') {
       ec = module.exports.eck1
+    } else if (type == 'R1') {
+      ec = module.exports.ecr1
+    } else {
+      ec = module.exports.ecsm2
     }
     const ecKey = ec.keyFromPrivate(key.payload)
 
@@ -146,20 +155,19 @@ module.exports = {
     }
   
     const x = new BN(payload.slice(1, 1 + 32))
-    debug('x =', x.toString(16))
     const s = new BN(payload.slice(1 + 32, 1 + 32 + 32))
-    debug('s =', s.toString(16))
     
     let ec
-    if (type == 'SM2') {
-      ec = module.exports.ecsm2
-    } else {
+    if (type == 'K1') {
       ec = module.exports.eck1
+    } else if (type == 'R1') {
+      ec = module.exports.ecr1
+    } else {
+      ec = module.exports.ecsm2
     }
 
     const rg = ec.curve.pointFromX(x, (payload[0] - 27) & 1)
-    debug('rg = [' + rg.getX().toString(16) + ', ' + rg.getY().toString(16) + ']')
-  
+
     // u1 = h/s
     const sinv = s.invm(ec.n)
     const u1 = h.mul(sinv).umod(ec.n)
@@ -170,8 +178,7 @@ module.exports = {
     const xinv = x.invm(ec.n)
     const K = u2.mul(s).mul(xinv)
   
-    debug('K = [' + K.getX().toString(16) + ', ' + K.getY().toString(16) + ']')
     return module.exports.keyToString('PUB', type, Buffer.from(
-      [K.getY().isEven() ? 2 : 3].concat(K.getX().toArray())))
+      [K.getY().isEven() ? 2 : 3].concat(K.getX().toArray('be', 32))))
   },
 }
